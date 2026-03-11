@@ -1,0 +1,438 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
+    <title>留壽都·3日行程助手</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background: #f5f7fa;
+            padding: 16px 12px 80px 12px;
+            color: #1e293b;
+            line-height: 1.4;
+        }
+        .header {
+            margin-bottom: 20px;
+        }
+        .header h1 {
+            font-size: 1.8rem;
+            font-weight: 600;
+            letter-spacing: -0.02em;
+            background: linear-gradient(145deg, #0b3b2c, #1a5f4b);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 6px;
+        }
+        .header .date {
+            font-size: 1rem;
+            color: #475569;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .header .date span {
+            background: #e2e8f0;
+            padding: 4px 12px;
+            border-radius: 30px;
+            font-weight: 500;
+            color: #1e293b;
+        }
+        /* 搜尋列 */
+        .search-box {
+            margin: 18px 0 16px 0;
+            display: flex;
+            align-items: center;
+            background: white;
+            border-radius: 40px;
+            padding: 8px 18px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.03);
+            border: 1px solid #e9eef2;
+        }
+        .search-box i {
+            font-size: 1.2rem;
+            color: #94a3b8;
+            margin-right: 10px;
+        }
+        .search-box input {
+            border: none;
+            background: transparent;
+            width: 100%;
+            font-size: 1rem;
+            padding: 8px 0;
+            outline: none;
+        }
+        /* 分類濾 chip bar */
+        .filter-bar {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-bottom: 24px;
+        }
+        .chip {
+            background: white;
+            border: 1px solid #dde3e9;
+            padding: 8px 18px;
+            border-radius: 40px;
+            font-size: 0.95rem;
+            font-weight: 500;
+            color: #334155;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.02);
+            transition: all 0.15s;
+            cursor: pointer;
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+        .chip.active {
+            background: #1e3b2f;
+            border-color: #1e3b2f;
+            color: white;
+            font-weight: 500;
+            box-shadow: 0 4px 8px rgba(20, 70, 50, 0.2);
+        }
+        .chip:active {
+            transform: scale(0.96);
+        }
+        /* 卡片清單 */
+        .list-container {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+        .card {
+            background: white;
+            border-radius: 24px;
+            padding: 18px 16px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.02);
+            border: 1px solid #edf2f7;
+            transition: 0.1s;
+        }
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 8px;
+        }
+        .card-header h3 {
+            font-size: 1.25rem;
+            font-weight: 650;
+            color: #0f2b22;
+            line-height: 1.3;
+            flex: 1;
+        }
+        .category-badge {
+            font-size: 0.7rem;
+            font-weight: 600;
+            padding: 4px 10px;
+            border-radius: 50px;
+            background: #eaf8f2;
+            color: #0f5b44;
+            white-space: nowrap;
+            margin-left: 8px;
+            border: 0.5px solid #bcd9ce;
+        }
+        .category-badge.shop {
+            background: #f1e5d9;
+            color: #7b4f2c;
+            border-color: #d7c0aa;
+        }
+        .category-badge.activity {
+            background: #e3f0fd;
+            color: #165a7a;
+            border-color: #b7d3e8;
+        }
+        .category-badge.facility {
+            background: #f0e7fc;
+            color: #4f378b;
+            border-color: #cfbef0;
+        }
+        .desc {
+            font-size: 0.9rem;
+            color: #4a5b6b;
+            margin: 8px 0 12px 0;
+            line-height: 1.45;
+            border-left: 3px solid #cbd5e1;
+            padding-left: 12px;
+        }
+        .info-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px 14px;
+            background: #f8fafc;
+            border-radius: 20px;
+            padding: 14px 12px;
+            margin-top: 8px;
+            font-size: 0.9rem;
+        }
+        .info-item {
+            display: flex;
+            flex-direction: column;
+        }
+        .info-label {
+            font-size: 0.7rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+            color: #64748b;
+            margin-bottom: 3px;
+        }
+        .info-value {
+            font-weight: 500;
+            color: #1e293b;
+            word-break: break-word;
+        }
+        .reservation-tag {
+            background: #fff3d9;
+            border-radius: 30px;
+            padding: 4px 12px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: #9b6f0b;
+            display: inline-block;
+            width: fit-content;
+            margin-top: 4px;
+        }
+        .free-badge {
+            background: #e1f7e3;
+            color: #1f7042;
+            font-weight: 600;
+            padding: 3px 10px;
+            border-radius: 30px;
+            font-size: 0.75rem;
+            display: inline-block;
+        }
+        .child-friendly {
+            background: #dbeafe;
+            color: #1e4a7a;
+            font-size: 0.7rem;
+            font-weight: 600;
+            padding: 3px 10px;
+            border-radius: 30px;
+            display: inline-block;
+            margin-left: 6px;
+        }
+        .footer-note {
+            text-align: center;
+            font-size: 0.75rem;
+            color: #8a9aa8;
+            margin-top: 30px;
+            border-top: 1px solid #dde3e9;
+            padding-top: 20px;
+        }
+        /* 無結果提示 */
+        .no-result {
+            text-align: center;
+            padding: 40px 20px;
+            color: #6b7b8b;
+            background: #f1f5f9;
+            border-radius: 36px;
+            font-size: 1rem;
+        }
+        /* 手機底部留白 */
+        .spacer {
+            height: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>留壽都·行程小幫手</h1>
+        <div class="date"><span>📅 2026.3.18 – 3.20</span> 春季營業資訊</div>
+    </div>
+
+    <!-- 搜尋 -->
+    <div class="search-box">
+        <i>🔍</i>
+        <input type="text" id="searchInput" placeholder="搜尋名稱或描述...">
+    </div>
+
+    <!-- 分類濾片 -->
+    <div class="filter-bar" id="filterChips">
+        <span class="chip active" data-filter="all">🌰 全部</span>
+        <span class="chip" data-filter="eat">🍽️ 吃</span>
+        <span class="chip" data-filter="play">⛷️ 玩</span>
+        <span class="chip" data-filter="shop">🛍️ 商店</span>
+        <span class="chip" data-filter="adult">👤 大人</span>
+        <span class="chip" data-filter="child">🧒 小孩</span>
+    </div>
+
+    <!-- 卡片列表將動態載入 -->
+    <div class="list-container" id="listContainer"></div>
+    <div class="spacer"></div>
+    <div class="footer-note">資訊更新至2026.3.12 · 建議行前再次確認</div>
+
+    <script>
+        (function() {
+            // ----- 資料庫 (整合PDF + Goldwin商店) -----
+            const items = [
+                // 餐廳 13+ 項 (含PDF所有)
+                { id:1, name:"Oktoberfest (北海道自助餐)", nameEn:"Oktoberfest", category:"eat", sub:"自助餐", desc:"自助式早餐與晚餐，多種北海道美食", location:"留壽都度假酒店北翼1F", hours:"早餐 6:30-9:00 / 晚餐 17:00-20:30", fee:"成人/兒童未標示 (6歲以下免費)", reservation:"無需預約", age:"成人、兒童", contact:"酒店電話", child:true },
+                { id:2, name:"Belle Vue Steakhouse", nameEn:"Belle Vue", category:"eat", sub:"牛排", desc:"高級牛排館，提供季節套餐", location:"留壽都度假酒店南翼4F", hours:"晚餐 17:00-20:00", fee:"未標示 (需查菜單)", reservation:"需預約 (Table Check)", age:"無", contact:"網上訂位", child:false },
+                { id:3, name:"雪花亭（涮涮鍋）", nameEn:"Sekkatei", category:"eat", sub:"涮涮鍋", desc:"涮涮鍋料理（早餐自助與晚餐主餐）", location:"留壽都度假酒店北翼3F", hours:"早餐 6:30-8:30 / 晚餐 17:30-20:00", fee:"未標示", reservation:"需預約", age:"無", contact:"網上訂位", child:false },
+                { id:4, name:"寿司割烹 雪花亭", nameEn:"Sushi Kappo Sekkatei", category:"eat", sub:"壽司", desc:"高級壽司割烹料理", location:"留壽都度假酒店北翼3F", hours:"晚餐 18:30-20:30", fee:"未標示", reservation:"需預約", age:"無", contact:"網上訂位", child:false },
+                { id:5, name:"歌天 (Kanten)", nameEn:"Kanten", category:"eat", sub:"中華", desc:"中華料理（僅冬季）", location:"留壽都度假酒店北翼4F", hours:"早餐 7:00-9:30 / 晚餐 17:30-21:30", fee:"未標示", reservation:"需預約", age:"無", contact:"網上訂位", child:false },
+                { id:6, name:"Kakashi（居酒屋）", nameEn:"Kakashi", category:"eat", sub:"居酒屋", desc:"日式居酒屋，提供串燒及下酒料理", location:"高地旅館1F", hours:"晚餐 17:00-22:30", fee:"未標示", reservation:"無需預約", age:"無", contact:"店內現場", child:false },
+                { id:7, name:"新月厅（自助餐）", nameEn:"Crescent Hall", category:"eat", sub:"自助餐", desc:"自助式餐廳，豐盛早餐與晚餐", location:"留壽都度假酒店北翼2F", hours:"早餐 6:30-8:30 / 晚餐 17:30-20:30", fee:"早餐 成人¥3300/兒童¥2310；晚餐 成人¥7000/兒童¥4900", reservation:"無需預約", age:"成人13+、4-12歲兒童 (5歲以下免)", contact:"店內現場", child:true },
+                { id:8, name:"酒吧“Cricket”", nameEn:"Pub Cricket", category:"eat", sub:"酒吧", desc:"酒吧餐廳，供應咖啡、酒水與小食", location:"留壽都度假酒店南翼1F", hours:"午餐 11:30-14:30 / 晚餐 17:30-21:00", fee:"酒吧點餐", reservation:"無需預約", age:"無", contact:"店內現場", child:false },
+                { id:9, name:"Névé Café", nameEn:"Névé Café", category:"eat", sub:"咖啡", desc:"現烘咖啡與輕食", location:"留壽都度假酒店北翼2F", hours:"9:00-16:00", fee:"咖啡甜點", reservation:"無需預約", age:"無", contact:"店內", child:true },
+                { id:10, name:"Névé Café 夜間酒廊", nameEn:"Névé Café Night Lounge", category:"eat", sub:"酒吧", desc:"酒吧式休閒：酒類飲品與輕食", location:"留壽都度假酒店北翼2F", hours:"16:00-21:00", fee:"酒吧點餐", reservation:"無需預約", age:"無", contact:"店內", child:false },
+                { id:11, name:"丹尼尔街咖啡糕点店", nameEn:"Daniel Street Café & Pastry", category:"eat", sub:"咖啡", desc:"咖啡與甜點店", location:"留壽都度假酒店南翼1F", hours:"11:00-19:00", fee:"甜點咖啡", reservation:"無需預約", age:"無", contact:"店內", child:true },
+                { id:12, name:"丹尼尔街沙拉熟食店", nameEn:"Daniel Street Salad & Deli", category:"eat", sub:"熟食", desc:"沙拉與熟食便當", location:"留壽都度假酒店南翼1F", hours:"午餐 11:00-17:00 / 晚餐 16:00-19:00", fee:"便當點餐", reservation:"無需預約", age:"無", contact:"店內", child:true },
+                { id:13, name:"丹尼尔Express", nameEn:"Daniel Express", category:"eat", sub:"快餐", desc:"快餐：自助選配飯菜", location:"留壽都度假酒店南翼1F", hours:"11:30-16:00", fee:"快餐", reservation:"無需預約", age:"無", contact:"店內", child:true },
+                { id:14, name:"雪绒花 (Edelweiss)", nameEn:"Edelweiss", category:"eat", sub:"咖啡", desc:"現烤麵包與Espresso咖啡", location:"留壽都度假酒店北翼GF", hours:"早餐 8:30-10:00 / 午餐 11:00-17:00", fee:"咖啡糕點", reservation:"無需預約", age:"無", contact:"店內", child:true },
+                
+                // 活動 (12項左右)
+                { id:15, name:"雪地摩托", nameEn:"Snowmobile", category:"play", sub:"摩托", desc:"駕乘雪地摩托遊覽雪原 (標準/長途)", location:"雪上活動樂園", hours:"標準 9:00-15:30 / 長途 9:00-15:00 (3月中下旬無冒險線)", fee:"標準 平日¥9500/兒¥12000、旺季¥11500/14500；長途 平日¥16000/21000、旺季¥19000/25000", reservation:"需提前1天17:00前預約", age:"標準13+ / 長途16+", contact:"網上預訂", child:false },
+                { id:16, name:"雪地漂流", nameEn:"Snow Rafting", category:"play", sub:"漂流", desc:"巨型橡皮艇在雪上滑行", location:"雪上活動樂園", hours:"9:00-15:30", fee:"成人¥2800 兒童¥2800 (旺季加¥300/500)", reservation:"需提前1天17:00前預約", age:"成人13+、兒童4-12 (3歲以下免費)", contact:"網上預訂", child:true },
+                { id:17, name:"狗拉雪橇", nameEn:"Dogsled", category:"play", sub:"雪橇", desc:"家犬拉雪橇，晨/午場次", location:"雪橇場地", hours:"10:00-11:30 (3月中下旬)", fee:"旺季成人¥5830、淡季¥4950", reservation:"需提前1天17:00前預約", age:"最低4歲、體重≤70kg", contact:"網上預訂", child:true },
+                { id:18, name:"騎馬 – 冬季家庭行程", nameEn:"Horseback Riding Family", category:"play", sub:"騎馬", desc:"家庭馬背之旅含嬰兒陪同", location:"洞爺湖牧場（含接送）", hours:"10:00-12:00、12:15-14:15", fee:"團費¥11550 (2-6名成行)", reservation:"需提前1天17:00前預約", age:"兒童可 (身高<140cm限2位；需成人陪同)", contact:"預訂中心", child:true },
+                { id:19, name:"騎馬-冬季湖泊行程", nameEn:"Horseback Riding Lake", category:"play", sub:"騎馬", desc:"湖邊馬背巡遊", location:"洞爺湖牧場（含接送）", hours:"同上", fee:"¥11550 (2-6名)", reservation:"需提前1天17:00前預約", age:"身高≥140cm", contact:"預訂中心", child:false },
+                { id:20, name:"自然之旅(Snowshoe)", nameEn:"Snowshoe", category:"play", sub:"健行", desc:"雪地健行+雪鞋體驗", location:"雪上活動樂園", hours:"9:30-11:30、13:30-15:30", fee:"成人¥9680、兒童¥8250", reservation:"需提前1天17:00前預約", age:"11歲以上", contact:"網上預訂", child:false },
+                { id:21, name:"冬季漂流之旅", nameEn:"Winter Rafting", category:"play", sub:"漂流", desc:"冰上橡皮艇遊河流", location:"雪上活動樂園集合", hours:"9:30-11:30、13:30-15:30", fee:"成人¥10000、兒童¥8000", reservation:"需提前1天17:00前預約", age:"成人13+、兒童7-12", contact:"網上預訂", child:true },
+                { id:22, name:"冰钓", nameEn:"Ice Fishing", category:"play", sub:"釣魚", desc:"體驗冰上垂釣", location:"BIG FIGHT Matsumoto附近", hours:"9:45-12:45、13:30-16:30", fee:"¥22000 (2人團)", reservation:"需提前1天17:00前預約", age:"5歲以上", contact:"網上預訂", child:true },
+                { id:23, name:"雪地漂移(乘坐體驗)", nameEn:"Snow Drift Ride", category:"play", sub:"漂移", desc:"教練駕駛雪地賽車乘坐體驗", location:"雪上活動樂園", hours:"10:00-15:00左右", fee:"¥12000 (含2人載客)", reservation:"無需預約", age:"無", contact:"現場", child:true },
+                { id:24, name:"雪地漂移(駕駛體驗)", nameEn:"Snow Drift Drive", category:"play", sub:"漂移", desc:"學員自行駕駛雪地賽車", location:"雪上活動樂園", hours:"9:00-16:00", fee:"¥16000 (個人)", reservation:"無需預約", age:"18歲以上", contact:"現場", child:false },
+                { id:25, name:"Rusutsu 100天音樂會", nameEn:"100 Days Music Night", category:"play", sub:"音樂", desc:"每晚交替樂隧演奏", location:"各酒吧/餐廳（依時間表）", hours:"每日17:30起各一場", fee:"免費", reservation:"無需預約", age:"無", contact:"自由入場", child:true },
+
+                // 室内設施 (4温泉+1泳池)
+                { id:26, name:"留寿都温泉-寿之汤", nameEn:"Kotobuki no Yu", category:"facility", sub:"溫泉", desc:"全天開放露天大浴場含桑拿", location:"留壽都度假酒店北翼6F", hours:"6:00-9:00 / 14:00-25:00", fee:"成人¥1500、兒童4-12¥750", reservation:"無需預約", age:"7歲以上不可混浴", contact:"前台", child:true },
+                { id:27, name:"威斯汀留寿都温泉", nameEn:"Westin Rusutsu Onsen", category:"facility", sub:"溫泉", desc:"室内外露天浴場含漩渦池", location:"威斯汀度假酒店2F", hours:"5:00-10:00 / 14:00-25:00", fee:"成人¥1500、兒童4-12¥750", reservation:"無需預約 (需房卡)", age:"7歲以上不可混浴", contact:"前台", child:true },
+                { id:28, name:"南翼公共浴場", nameEn:"South Wing Public Bath", category:"facility", sub:"浴場", desc:"公共大浴場（非溫泉），羊蹄山泉水，附芬蘭桑拿", location:"留壽都度假酒店南翼1F", hours:"6:00-9:00 / 14:00-25:00", fee:"成人¥1500、兒童4-12¥750", reservation:"無需預約", age:"7歲以上不可混浴", contact:"前台", child:true },
+                { id:29, name:"室内人造浪泳池", nameEn:"Indoor Wave Pool", category:"facility", sub:"泳池", desc:"温水波浪池 + 84m水滑梯", location:"南翼1F", hours:"14:00-21:00", fee:"成人¥1500、兒童4-12¥750 (需自備泳衣)", reservation:"無需預約", age:"滑梯身高≥130cm，兒童需防水尿布", contact:"前台", child:true },
+
+                // 商店 (Goldwin Store 從前次對話加入)
+                { id:30, name:"Goldwin Store", nameEn:"Goldwin Store", category:"shop", sub:"戶外用品", desc:"Goldwin, The North Face, Helly Hansen 等品牌及度假村限定", location:"留壽都度假酒店北翼GF", hours:"9:00-21:00", fee:"依商品", reservation:"無需預約", age:"無", contact:"店內", child:true }
+            ];
+
+            // 額外手動標記適合小孩的項目(若child未正確) 大部分有兒童價或低年齡已設true
+            // 可再微調: 例如雪地摩托長途不適合小孩，但已用年齡區分; 為篩選「小孩」我們只要有兒童參與可能就設true。
+            // 已大致正確。
+
+            // ----- 渲染 & 篩選邏輯 -----
+            const listContainer = document.getElementById('listContainer');
+            const searchInput = document.getElementById('searchInput');
+            const chips = document.querySelectorAll('.chip');
+
+            let currentFilter = 'all';
+            let searchTerm = '';
+
+            // 篩選核心函數
+            function filterItems() {
+                return items.filter(item => {
+                    // 文字搜尋 (名稱、描述、原名)
+                    const matchSearch = searchTerm === '' || 
+                        item.name.toLowerCase().includes(searchTerm) ||
+                        (item.desc && item.desc.toLowerCase().includes(searchTerm)) ||
+                        (item.nameEn && item.nameEn.toLowerCase().includes(searchTerm));
+                    if (!matchSearch) return false;
+
+                    // 分類篩選
+                    if (currentFilter === 'all') return true;
+                    if (currentFilter === 'eat') return item.category === 'eat';
+                    if (currentFilter === 'play') return item.category === 'play';
+                    if (currentFilter === 'shop') return item.category === 'shop';
+                    if (currentFilter === 'facility') return item.category === 'facility'; // 雖然沒獨立chip，保留
+                    if (currentFilter === 'adult') {
+                        // 大人：年齡限制沒有特別限制小孩，或者明確成人 (例如年齡寫成人13+、16+、18+ 或無兒童價)
+                        // 簡單：沒有child flag 或 年齡包含成人限定
+                        return !item.child || item.age.includes('18') || item.age.includes('16') || item.age.includes('成人13+'); // 寬鬆
+                    }
+                    if (currentFilter === 'child') {
+                        // 小孩： item.child === true 並且排除嚴格成人(18+)
+                        return item.child === true && !item.age.includes('18') && !item.age.includes('16+');
+                    }
+                    return true;
+                });
+            }
+
+            // 渲染卡片
+            function render() {
+                const filtered = filterItems();
+                if (filtered.length === 0) {
+                    listContainer.innerHTML = `<div class="no-result">😌 沒有符合的項目<br>試試其他篩選條件</div>`;
+                    return;
+                }
+
+                let html = '';
+                filtered.forEach(item => {
+                    // badge class 對應
+                    let badgeClass = 'category-badge';
+                    if (item.category === 'shop') badgeClass += ' shop';
+                    else if (item.category === 'play') badgeClass += ' activity';
+                    else if (item.category === 'facility') badgeClass += ' facility';
+
+                    // 預約顯示
+                    const resvHtml = item.reservation && item.reservation !== '無需預約' ? 
+                        `<div class="reservation-tag">📌 ${item.reservation}</div>` : '';
+
+                    // 年齡限制簡寫
+                    const ageShow = item.age || '無';
+
+                    html += `
+                    <div class="card">
+                        <div class="card-header">
+                            <h3>${item.name}</h3>
+                            <span class="${badgeClass}">${item.category === 'eat' ? '餐廳' : (item.category==='play'?'活動':(item.category==='shop'?'商店':'設施'))}</span>
+                        </div>
+                        <div class="desc">${item.desc} · ${item.location}</div>
+                        <div class="info-grid">
+                            <div class="info-item">
+                                <span class="info-label">⏰ 時間</span>
+                                <span class="info-value">${item.hours}</span>
+                            </div>
+                            <div class="info-item">
+                                <span class="info-label">💰 費用</span>
+                                <span class="info-value">${item.fee}</span>
+                            </div>
+                            <div class="info-item">
+                                <span class="info-label">🧑 年齡</span>
+                                <span class="info-value">${ageShow}</span>
+                            </div>
+                            <div class="info-item">
+                                <span class="info-label">📞 聯絡/預約</span>
+                                <span class="info-value">${item.contact || '—'} ${resvHtml}</span>
+                            </div>
+                        </div>
+                        ${ item.fee.includes('免費') ? '<span class="free-badge">免費</span>' : '' }
+                        ${ item.child ? '<span class="child-friendly">👶 適合小孩</span>' : '' }
+                    </div>
+                    `;
+                });
+                listContainer.innerHTML = html;
+            }
+
+            // 事件監聽：篩選chip點擊
+            chips.forEach(chip => {
+                chip.addEventListener('click', function(e) {
+                    const filter = this.dataset.filter;
+                    if (!filter) return;
+
+                    // 更新active樣式
+                    chips.forEach(c => c.classList.remove('active'));
+                    this.classList.add('active');
+
+                    currentFilter = filter;
+                    render();
+                });
+            });
+
+            // 搜尋即時過濾
+            searchInput.addEventListener('input', function(e) {
+                searchTerm = e.target.value.trim().toLowerCase();
+                render();
+            });
+
+            // 初始化渲染
+            render();
+
+            // 輕觸卡片不影響
+        })();
+    </script>
+</body>
+</html>
