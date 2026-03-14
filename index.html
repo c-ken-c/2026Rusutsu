@@ -3,7 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
-    <title>留壽都·地圖攻略總覽</title>
+    <title>留壽都·地圖攻略總覽＋札幌地下街</title>
+    <!-- Leaflet 樣式與腳本 (地圖用) -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+          integrity="sha256-sA+4nX0pKJg2vQ0Gkqk2bqgqk6kQF4n3mG1w8g8m4yg=" crossorigin=""/>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+            integrity="sha256-XQoYMqMTK8LvdxXYG3nZ448hOEQiglfqkJs1NOQV44c=" crossorigin=""></script>
     <style>
         * {
             box-sizing: border-box;
@@ -15,6 +20,13 @@
             background: #f4f7fb;
             padding: 16px 12px 90px 12px;
             color: #1e293b;
+        }
+        .header {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 10px;
         }
         .header h1 {
             font-size: 1.9rem;
@@ -33,6 +45,26 @@
             font-weight: 500;
             font-size: 0.95rem;
             margin-bottom: 12px;
+        }
+        .sapporo-btn {
+            background: #e67e22;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 40px;
+            font-weight: 600;
+            font-size: 1rem;
+            cursor: pointer;
+            box-shadow: 0 4px 8px rgba(230,126,34,0.2);
+            transition: 0.1s;
+            text-decoration: none;
+            display: inline-block;
+            margin-bottom: 12px;
+            border: 1px solid #cc6f1f;
+        }
+        .sapporo-btn:hover {
+            background: #d9741e;
+            transform: scale(0.98);
         }
         /* 地圖摺疊面板 */
         .map-details {
@@ -293,12 +325,37 @@
             border-radius: 42px;
             font-size: 1rem;
         }
+        /* 札幌地下街段落樣式 */
+        #sapporo-underground {
+            margin-top: 30px;
+            scroll-margin-top: 20px; /* 讓按鈕跳轉時留一點空間 */
+        }
+        .map-note {
+            font-size: 0.9rem;
+            color: #3b5566;
+            margin-bottom: 10px;
+        }
+        .gmaps-btn {
+            background: #1d6fb0;
+            border: none;
+            color: white;
+            padding: 8px 16px;
+            border-radius: 30px;
+            font-weight: 600;
+            cursor: pointer;
+        }
     </style>
 </head>
 <body>
     <div class="header">
-        <h1>留壽都·地圖總覽</h1>
-        <div class="date-badge">📅 2026.3.18 – 3.20</div>
+        <div>
+            <h1>留壽都·地圖總覽</h1>
+            <div class="date-badge">📅 2026.3.18 – 3.20</div>
+        </div>
+        <!-- 顯眼按鈕：點擊平滑滾動至札幌地下街地圖 -->
+        <a href="#sapporo-underground" style="text-decoration: none;">
+            <button class="sapporo-btn">🗺️ 札幌地下街地圖</button>
+        </a>
     </div>
 
     <!-- 可摺疊地圖面板 (所有圖片放在 image/ 資料夾) -->
@@ -325,7 +382,7 @@
         <input type="text" id="searchInput" placeholder="搜尋名稱、地點或描述...">
     </div>
 
-    <!-- 分類篩選：類別 (新增「📘 攻略」) -->
+    <!-- 分類篩選：類別 -->
     <div class="filter-section">
         <div class="filter-label">🍽️ 類別</div>
         <div class="chip-row" id="categoryChips">
@@ -340,7 +397,7 @@
         </div>
     </div>
 
-    <!-- 分類篩選：大樓/位置 (與之前相同) -->
+    <!-- 分類篩選：大樓/位置 -->
     <div class="filter-section">
         <div class="filter-label">🏢 大樓 / 區域</div>
         <div class="chip-row" id="buildingChips">
@@ -356,13 +413,27 @@
     </div>
 
     <div class="list-container" id="listContainer"></div>
+
+    <!-- ===== 札幌地下街互動地圖（已加入特別標示） ===== -->
+    <section id="sapporo-underground">
+        <h2 style="font-size:1.5rem;margin:20px 0 8px;">🗺️ 札幌最強地下街路線</h2>
+        <div class="map-note">
+            <strong>路線：</strong>札幌站 → 大通（電視塔/大通公園） → 狸小路 → 薄野（Susukino）<br>
+            <strong style="color:#d94d4d;">特別標示：JR Inn Sapporo Kita 2 Jo（北2條JR飯店）</strong>（點圖示可開 Google Map）
+        </div>
+        <div id="sapporoMap" style="width:100%;height:56vh;border-radius:20px;overflow:hidden;border:1px solid #d0e2ef;"></div>
+        <div style="margin-top:12px;">
+            <button id="openGmapsAll" class="gmaps-btn">📍 在 Google Maps 開啟整體路線</button>
+            <span style="margin-left:10px;color:#5f7e94;">（步行路線，新分頁開啟）</span>
+        </div>
+    </section>
+
     <div class="footer-note">資訊整合至2026.3.13 · 行前可向飯店確認</div>
 
     <script>
         (function() {
-            // ---------- 整合資料庫 (含所有新資訊) ----------
+            // ---------- 整合資料庫 (完全保留你原有的所有項目) ----------
             const items = [
-                // 原有的46項 (從之前版本複製，但略作調整以符合新資料，並確保ID連續)
                 // 戶外活動 (id 1-10)
                 { id:1, name:"雪地摩托", nameEn:"Snowmobile", category:"play", desc:"駕駛雪地摩托遊覽雪原 (標準/長途)", location:"雪上活動樂園", hours:"09:00-15:30", fee:"¥9500~25000 (依路線/季節)", reservation:"需前一天17:00前預約", age:"13歲+ / 長途16歲+", contact:"網上預訂", child:false, building:"戶外樂園", freeForGuest:false },
                 { id:2, name:"雪地漂流", nameEn:"Snow Rafting", category:"play", desc:"巨型橡皮艇雪上滑行", location:"雪上活動樂園", hours:"09:00-15:30", fee:"¥2800 (旺季加價)", reservation:"需前一天17:00前預約", age:"4歲+", contact:"網上預訂", child:true, building:"戶外樂園", freeForGuest:false },
@@ -399,12 +470,11 @@
                 { id:31, name:"Daniel Street 熟食", nameEn:"Daniel Street Deli", category:"eat", desc:"沙拉、熟食便當", location:"南翼1F", hours:"11:00-19:00", fee:"便當", reservation:"無需預約", age:"無", contact:"店內", child:true, building:"南翼" },
                 { id:32, name:"Daniel Express", nameEn:"Daniel Express", category:"eat", desc:"自助快餐", location:"南翼1F", hours:"11:30-16:00", fee:"快餐", reservation:"無需預約", age:"無", contact:"店內", child:true, building:"南翼" },
                 { id:33, name:"雪绒花 Edelweiss", nameEn:"Edelweiss Cafe", category:"eat", desc:"現烤麵包、咖啡", location:"北翼GF", hours:"08:30-17:00", fee:"咖啡糕點", reservation:"無需預約", age:"無", contact:"店內", child:true, building:"北翼" },
-                // 新食堂 (山上)
                 { id:34, name:"Horn 食堂", nameEn:"Horn", category:"eat", desc:"西山食堂，日式咖哩、拉麵、丼飯等", location:"西山 (室外售票處後方)", hours:"雪季白天", fee:"主餐約1200-1700日圓", reservation:"無需預約", age:"無", contact:"現場", child:true, building:"戶外樂園" },
                 { id:35, name:"Lone Pine 食堂", nameEn:"Lone Pine", category:"eat", desc:"東山食堂，各式熱食、飲品", location:"東山纜車主站", hours:"雪季白天", fee:"主餐約1200-1700日圓", reservation:"無需預約", age:"無", contact:"現場", child:true, building:"戶外樂園" },
                 { id:36, name:"ISOLA 2000 食堂", nameEn:"ISOLA 2000", category:"eat", desc:"伊索拉山腳，西餐為主，價格略高", location:"Isola Grand / Furikozawa 雪道山腳", hours:"雪季白天", fee:"主餐約1500-2000日圓", reservation:"無需預約", age:"無", contact:"現場", child:true, building:"戶外樂園" },
                 { id:37, name:"Steamboat 食堂", nameEn:"Steamboat", category:"eat", desc:"伊索拉山腳，簡餐", location:"Isola A/B 雪道山腳", hours:"雪季白天", fee:"主餐約1200-1700日圓", reservation:"無需預約", age:"無", contact:"現場", child:true, building:"戶外樂園" },
-                // 商店 (既有 id 38-49 沿用)
+                // 商店 (既有 id 38-50)
                 { id:38, name:"Burton Store", nameEn:"Burton Store", category:"shop", desc:"品牌滑雪裝備", location:"Resort Hotel & Convention", hours:"09:00-20:00", fee:"依商品", reservation:"無需預約", age:"無", contact:"店內", child:true, building:"北翼" },
                 { id:39, name:"Salomon Store", nameEn:"Salomon Store", category:"shop", desc:"滑雪裝備", location:"Resort Hotel & Convention", hours:"09:00-20:00", fee:"依商品", reservation:"無需預約", age:"無", contact:"店內", child:true, building:"北翼" },
                 { id:40, name:"Goldwin Store", nameEn:"Goldwin Store", category:"shop", desc:"Goldwin / TNF / HH 服飾", location:"Resort Hotel & Convention", hours:"09:00-20:00", fee:"依商品", reservation:"無需預約", age:"無", contact:"店內", child:true, building:"北翼" },
@@ -418,11 +488,9 @@
                 { id:48, name:"Winter Tale", nameEn:"Winter Tale", category:"shop", desc:"原創商品", location:"Westin Rusutsu", hours:"09:00-20:00", fee:"依商品", reservation:"無需預約", age:"無", contact:"店內", child:true, building:"Westin" },
                 { id:49, name:"Welcome 便利店", nameEn:"Welcome Convenience", category:"shop", desc:"唯一便利商店", location:"Westin Rusutsu", hours:"07:00-23:00", fee:"依商品", reservation:"無需預約", age:"無", contact:"店內", child:true, building:"Westin" },
                 { id:50, name:"Owners", nameEn:"Owners", category:"shop", desc:"滑雪用品店", location:"Westin Rusutsu", hours:"09:00-20:00", fee:"依商品", reservation:"無需預約", age:"無", contact:"店內", child:true, building:"Westin" },
-
-                // 新增大樓以外的設施：托兒所 (facility)
+                // 托兒所 (facility)
                 { id:51, name:"托兒所", nameEn:"Nursery", category:"facility", desc:"1歲以上托育，含午餐、小食", location:"西山區域", hours:"8:30-18:30", fee:"¥2000/小時；午餐¥1300；小食¥250", reservation:"需預約", age:"1歲以上", contact:"場內諮詢", child:true, building:"其他", freeForGuest:false },
-
-                // ========== 攻略類別 (guide) 整合新資訊 ==========
+                // 攻略類別 (guide) 
                 { id:52, name:"裝備租借 (雪具)", nameEn:"Rental", category:"guide", desc:"West Mt. / Westin Hotel 可租雪板、雪鞋、雪杖、雪服、護目鏡、手套。一天全套約¥9000–11000。建議自備手套護目鏡。", location:"West Mt. 及 Westin", hours:"依店家", fee:"約¥9000–11000/全套", reservation:"網上表單可預約", age:"無", contact:"現場或官網", child:true, building:"其他" },
                 { id:53, name:"山上食堂餐飲價格", nameEn:"Mountain food", category:"guide", desc:"日式咖哩、拉麵、丼飯、西式意粉、漢堡、蛋包飯等。主餐約1200–1700日圓，飲品400–1500日圓。ISOLA 2000 偏西餐價格稍高。", location:"Horn, Lone Pine, ISOLA 2000, Steamboat", hours:"白天營業", fee:"¥1200~2000", reservation:"無需", age:"無", contact:"", child:true, building:"戶外樂園" },
                 { id:54, name:"雪場周邊配套", nameEn:"Facilities around", category:"guide", desc:"場內酒店：度假村酒店、威斯汀、The Vale、Camp Village。餐飲：牛排、烤肉、壽司、放題、酒吧等20多種（西山/威斯汀）。雪具店：Burton、Salomon、Goldwin（西山）。托兒所：1歲以上，¥2000/小時。", location:"西山/威斯汀", hours:"各店不同", fee:"-", reservation:"部分需預約", age:"-", contact:"", child:true, building:"其他" },
@@ -433,7 +501,7 @@
                 { id:59, name:"打卡地點", nameEn:"Photo spots", category:"guide", desc:"Mt. Isola 山頂（洞爺湖、太平洋、羊蹄山）、Giant雪道（遊樂場視角）、Across-A起點（眺望Moguls）、East Mt.山頂（黃昏）、West Mt.室內地下（旋轉木馬）。", location:"各山", hours:"全天", fee:"免費", reservation:"無需", age:"無", contact:"", child:true, building:"其他" }
             ];
 
-            // ----- 篩選狀態 -----
+            // ----- 篩選狀態 (完全保留原功能) -----
             let categoryFilter = 'all';
             let buildingFilter = 'all';
             let searchTerm = '';
@@ -449,7 +517,6 @@
                         const haystack = (item.name + (item.nameEn||'') + (item.desc||'') + item.location).toLowerCase();
                         if (!haystack.includes(searchTerm)) return false;
                     }
-
                     if (categoryFilter !== 'all') {
                         if (categoryFilter === 'adult') {
                             if (item.child === true && !item.age?.includes('16') && !item.age?.includes('18') && !item.age?.includes('大人')) return false;
@@ -460,7 +527,6 @@
                             return false;
                         }
                     }
-
                     if (buildingFilter !== 'all') {
                         if (buildingFilter === '戶外樂園') {
                             if (!['戶外樂園', '洞爺湖牧場'].includes(item.building)) return false;
@@ -480,7 +546,6 @@
                     listContainer.innerHTML = '<div class="no-result">沒有符合的項目</div>';
                     return;
                 }
-
                 let html = '';
                 filtered.forEach(item => {
                     let badgeClass = 'badge';
@@ -537,7 +602,6 @@
                     render();
                 });
             });
-
             buildingChips.forEach(chip => {
                 chip.addEventListener('click', () => {
                     const bld = chip.dataset.building;
@@ -547,131 +611,87 @@
                     render();
                 });
             });
-
             searchInput.addEventListener('input', (e) => {
                 searchTerm = e.target.value.trim().toLowerCase();
                 render();
             });
-
             updateChips();
             render();
         })();
+
+        // ========== 札幌地下街地圖初始化 ==========
+        (function(){
+            const center = [43.063000, 141.353500];
+            const points = {
+                sapporoStation: { name: "Sapporo Station (札幌站)", lat: 43.067833, lon: 141.350497 },
+                odori: { name: "Odori Park / TV Tower (大通公園)", lat: 43.061700, lon: 141.354500 },
+                tanukikoji: { name: "Tanukikoji (狸小路)", lat: 43.061100, lon: 141.352600 },
+                susukino: { name: "Susukino (薄野)", lat: 43.055500, lon: 141.354600 },
+                jrInn: { name: "JR Inn Sapporo Kita 2 Jo（北2條JR飯店）", lat: 43.064429, lon: 141.354302 }
+            };
+
+            const map = L.map('sapporoMap', {
+                center: center,
+                zoom: 15,
+                zoomControl: true,
+                attributionControl: false
+            });
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                maxZoom: 19,
+                minZoom: 12,
+                detectRetina: true
+            }).addTo(map);
+
+            const pinIcon = L.icon({
+                iconUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png',
+                iconSize: [25,41],
+                iconAnchor: [12,41],
+                popupAnchor: [1,-34]
+            });
+            const hotelIcon = L.divIcon({
+                className: 'hotel-marker',
+                html: '<div style="background:#d94d4d;border-radius:8px;padding:6px 8px;color:white;font-weight:700;font-size:12px;">宿</div>',
+                iconSize: [36,24],
+                iconAnchor: [18,12]
+            });
+
+            function addMarker(p, icon){
+                const marker = L.marker([p.lat, p.lon], { icon: icon || pinIcon }).addTo(map);
+                const gmaps = `https://www.google.com/maps/search/?api=1&query=${p.lat},${p.lon}`;
+                marker.bindPopup(`<strong>${p.name}</strong><br><a href="${gmaps}" target="_blank">在 Google Maps 打開</a>`);
+                return marker;
+            }
+
+            addMarker(points.sapporoStation);
+            addMarker(points.odori);
+            addMarker(points.tanukikoji);
+            addMarker(points.susukino);
+            addMarker(points.jrInn, hotelIcon);
+
+            const routeCoords = [
+                [points.sapporoStation.lat, points.sapporoStation.lon],
+                [points.odori.lat, points.odori.lon],
+                [points.tanukikoji.lat, points.tanukikoji.lon],
+                [points.susukino.lat, points.susukino.lon]
+            ];
+            const route = L.polyline(routeCoords, { color: '#1d8bd1', weight: 5, opacity: 0.85, lineJoin: 'round' }).addTo(map);
+            map.fitBounds(route.getBounds().pad(0.3));
+
+            document.getElementById('openGmapsAll').addEventListener('click', function(){
+                const origin = `${points.sapporoStation.lat},${points.sapporoStation.lon}`;
+                const dest = `${points.susukino.lat},${points.susukino.lon}`;
+                const waypoints = `${points.odori.lat},${points.odori.lon}|${points.tanukikoji.lat},${points.tanukikoji.lon}`;
+                const url = `https://www.google.com/maps/dir/?api=1&origin=${origin}&destination=${dest}&travelmode=walking&waypoints=${encodeURIComponent(waypoints)}`;
+                window.open(url, '_blank');
+            });
+
+            route.on('click', function(){ 
+                L.popup()
+                    .setLatLng(route.getBounds().getCenter())
+                    .setContent('<strong>地下街/地面步行路線</strong><br>札幌站 → 大通 → 狸小路 → 薄野')
+                    .openOn(map);
+            });
+        })();
     </script>
-    <!-- ===== 札幌地下街互動地圖（Leaflet / OSM） ===== -->
-<!-- 在貼上前請確認 head 中沒有重複引入 leaflet; 若沒有，請同時貼下方 <link> 與 <script> -->
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
-  integrity="sha256-sA+4nX0pKJg2vQ0Gkqk2bqgqk6kQF4n3mG1w8g8m4yg=" crossorigin=""/>
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
-  integrity="sha256-XQoYMqMTK8LvdxXYG3nZ448hOEQiglfqkJs1NOQV44c=" crossorigin=""></script>
-
-<section id="sapporo-underground" style="margin-top:20px;">
-  <h2 style="font-size:1.2rem;margin-bottom:8px;">札幌最強地下街路線（手機友善）</h2>
-  <p style="font-size:0.95rem;color:#3b5566;margin-bottom:10px;">
-    路線：<strong>札幌站 → 大通（電視塔/大通公園） → 狸小路 → 薄野（Susukino）</strong><br>
-    特別標示：<strong>JR Inn Sapporo Kita 2 Jo（北2條JR飯店）</strong>（點圖示可開 Google Map）
-  </p>
-
-  <div id="sapporoMap" style="width:100%;height:56vh;border-radius:14px;overflow:hidden;border:1px solid #e3eef6;"></div>
-
-  <div style="margin-top:8px;font-size:0.9rem;color:#5b6e78;">
-    <button id="openGmapsAll" style="padding:8px 12px;border-radius:10px;border:0;background:#1d6fb0;color:white;font-weight:600;">
-      在 Google Maps 開啟整體路線
-    </button>
-    <span style="margin-left:10px;color:#93a0aa;">（會在新分頁開啟）</span>
-  </div>
-</section>
-
-<script>
-  (function(){
-    // 中心位置（札幌市中心）
-    const center = [43.063000, 141.353500];
-
-    // 重要地點（經緯度）
-    const points = {
-      sapporoStation: { name: "Sapporo Station (札幌站)", lat: 43.067833, lon: 141.350497 },
-      odori: { name: "Odori Park / TV Tower (大通公園)", lat: 43.061700, lon: 141.354500 },
-      tanukikoji: { name: "Tanukikoji (狸小路)", lat: 43.061100, lon: 141.352600 },
-      susukino: { name: "Susukino (薄野)", lat: 43.055500, lon: 141.354600 },
-      jrInn: { name: "JR Inn Sapporo Kita 2 Jo（北2條JR飯店）", lat: 43.064429, lon: 141.354302 }
-    };
-
-    // 建立地圖
-    const map = L.map('sapporoMap', {
-      center: center,
-      zoom: 15,
-      zoomControl: true,
-      attributionControl: false
-    });
-
-    // 使用 OpenStreetMap 磚圖
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      maxZoom: 19,
-      minZoom: 12,
-      detectRetina: true
-    }).addTo(map);
-
-    // 自訂圖示：一般站點與飯店
-    const pinIcon = L.icon({
-      iconUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png',
-      iconSize: [25,41],
-      iconAnchor: [12,41],
-      popupAnchor: [1,-34]
-    });
-    const hotelIcon = L.divIcon({
-      className: 'hotel-marker',
-      html: '<div style="background:#d94d4d;border-radius:8px;padding:6px 8px;color:white;font-weight:700;font-size:12px;">宿</div>',
-      iconSize: [36,24],
-      iconAnchor: [18,12]
-    });
-
-    // 加入標記與 popup（並附上 Google Maps 連結）
-    function addMarker(p, icon){
-      const marker = L.marker([p.lat, p.lon], { icon: icon || pinIcon }).addTo(map);
-      const gmaps = `https://www.google.com/maps/search/?api=1&query=${p.lat},${p.lon}`;
-      marker.bindPopup(`<strong>${p.name}</strong><br><a href="${gmaps}" target="_blank">在 Google Maps 打開</a>`);
-      return marker;
-    }
-
-    addMarker(points.sapporoStation);
-    addMarker(points.odori);
-    addMarker(points.tanukikoji);
-    addMarker(points.susukino);
-    addMarker(points.jrInn, hotelIcon);
-
-    // 畫出地下街行走路線（折線）
-    const routeCoords = [
-      [points.sapporoStation.lat, points.sapporoStation.lon],
-      [points.odori.lat, points.odori.lon],
-      [points.tanukikoji.lat, points.tanukikoji.lon],
-      [points.susukino.lat, points.susukino.lon]
-    ];
-    const route = L.polyline(routeCoords, { color: '#1d8bd1', weight: 5, opacity: 0.85, lineJoin: 'round' }).addTo(map);
-    map.fitBounds(route.getBounds().pad(0.3));
-
-    // Google Maps 打開整體路線（車/步行/捷運複合路線可改）
-    document.getElementById('openGmapsAll').addEventListener('click', function(){
-      // 使用 Google Maps 的 directions URL（多點）；在手機上會跳到 Google Maps App/網頁
-      const origin = `${points.sapporoStation.lat},${points.sapporoStation.lon}`;
-      const dest = `${points.susukino.lat},${points.susukino.lon}`;
-      const waypoints = `${points.odori.lat},${points.odori.lon}|${points.tanukikoji.lat},${points.tanukikoji.lon}`;
-      const url = `https://www.google.com/maps/dir/?api=1&origin=${origin}&destination=${dest}&travelmode=walking&waypoints=${encodeURIComponent(waypoints)}`;
-      window.open(url, '_blank');
-    });
-
-    // 在小螢幕上提升觸控體驗：點擊 polyline 可顯示摘要
-    route.on('click', function(){ 
-      L.popup()
-        .setLatLng(route.getBounds().getCenter())
-        .setContent('<strong>地下街/地面步行路線</strong><br>札幌站 → 大通 → 狸小路 → 薄野')
-        .openOn(map);
-    });
-
-    // optional: 當使用者點到「JR Inn」popup，可自動放大
-    // 取得 jrInn marker（可以在需要時解開）
-    // const jrMarker = addMarker(points.jrInn, hotelIcon);
-    // jrMarker.on('click', () => map.setView([points.jrInn.lat, points.jrInn.lon], 17));
-
-  })();
-</script>
 </body>
 </html>
