@@ -557,5 +557,121 @@
             render();
         })();
     </script>
+    <!-- ===== 札幌地下街互動地圖（Leaflet / OSM） ===== -->
+<!-- 在貼上前請確認 head 中沒有重複引入 leaflet; 若沒有，請同時貼下方 <link> 與 <script> -->
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+  integrity="sha256-sA+4nX0pKJg2vQ0Gkqk2bqgqk6kQF4n3mG1w8g8m4yg=" crossorigin=""/>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+  integrity="sha256-XQoYMqMTK8LvdxXYG3nZ448hOEQiglfqkJs1NOQV44c=" crossorigin=""></script>
+
+<section id="sapporo-underground" style="margin-top:20px;">
+  <h2 style="font-size:1.2rem;margin-bottom:8px;">札幌最強地下街路線（手機友善）</h2>
+  <p style="font-size:0.95rem;color:#3b5566;margin-bottom:10px;">
+    路線：<strong>札幌站 → 大通（電視塔/大通公園） → 狸小路 → 薄野（Susukino）</strong><br>
+    特別標示：<strong>JR Inn Sapporo Kita 2 Jo（北2條JR飯店）</strong>（點圖示可開 Google Map）
+  </p>
+
+  <div id="sapporoMap" style="width:100%;height:56vh;border-radius:14px;overflow:hidden;border:1px solid #e3eef6;"></div>
+
+  <div style="margin-top:8px;font-size:0.9rem;color:#5b6e78;">
+    <button id="openGmapsAll" style="padding:8px 12px;border-radius:10px;border:0;background:#1d6fb0;color:white;font-weight:600;">
+      在 Google Maps 開啟整體路線
+    </button>
+    <span style="margin-left:10px;color:#93a0aa;">（會在新分頁開啟）</span>
+  </div>
+</section>
+
+<script>
+  (function(){
+    // 中心位置（札幌市中心）
+    const center = [43.063000, 141.353500];
+
+    // 重要地點（經緯度）
+    const points = {
+      sapporoStation: { name: "Sapporo Station (札幌站)", lat: 43.067833, lon: 141.350497 },
+      odori: { name: "Odori Park / TV Tower (大通公園)", lat: 43.061700, lon: 141.354500 },
+      tanukikoji: { name: "Tanukikoji (狸小路)", lat: 43.061100, lon: 141.352600 },
+      susukino: { name: "Susukino (薄野)", lat: 43.055500, lon: 141.354600 },
+      jrInn: { name: "JR Inn Sapporo Kita 2 Jo（北2條JR飯店）", lat: 43.064429, lon: 141.354302 }
+    };
+
+    // 建立地圖
+    const map = L.map('sapporoMap', {
+      center: center,
+      zoom: 15,
+      zoomControl: true,
+      attributionControl: false
+    });
+
+    // 使用 OpenStreetMap 磚圖
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      maxZoom: 19,
+      minZoom: 12,
+      detectRetina: true
+    }).addTo(map);
+
+    // 自訂圖示：一般站點與飯店
+    const pinIcon = L.icon({
+      iconUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png',
+      iconSize: [25,41],
+      iconAnchor: [12,41],
+      popupAnchor: [1,-34]
+    });
+    const hotelIcon = L.divIcon({
+      className: 'hotel-marker',
+      html: '<div style="background:#d94d4d;border-radius:8px;padding:6px 8px;color:white;font-weight:700;font-size:12px;">宿</div>',
+      iconSize: [36,24],
+      iconAnchor: [18,12]
+    });
+
+    // 加入標記與 popup（並附上 Google Maps 連結）
+    function addMarker(p, icon){
+      const marker = L.marker([p.lat, p.lon], { icon: icon || pinIcon }).addTo(map);
+      const gmaps = `https://www.google.com/maps/search/?api=1&query=${p.lat},${p.lon}`;
+      marker.bindPopup(`<strong>${p.name}</strong><br><a href="${gmaps}" target="_blank">在 Google Maps 打開</a>`);
+      return marker;
+    }
+
+    addMarker(points.sapporoStation);
+    addMarker(points.odori);
+    addMarker(points.tanukikoji);
+    addMarker(points.susukino);
+    addMarker(points.jrInn, hotelIcon);
+
+    // 畫出地下街行走路線（折線）
+    const routeCoords = [
+      [points.sapporoStation.lat, points.sapporoStation.lon],
+      [points.odori.lat, points.odori.lon],
+      [points.tanukikoji.lat, points.tanukikoji.lon],
+      [points.susukino.lat, points.susukino.lon]
+    ];
+    const route = L.polyline(routeCoords, { color: '#1d8bd1', weight: 5, opacity: 0.85, lineJoin: 'round' }).addTo(map);
+    map.fitBounds(route.getBounds().pad(0.3));
+
+    // Google Maps 打開整體路線（車/步行/捷運複合路線可改）
+    document.getElementById('openGmapsAll').addEventListener('click', function(){
+      // 使用 Google Maps 的 directions URL（多點）；在手機上會跳到 Google Maps App/網頁
+      const origin = `${points.sapporoStation.lat},${points.sapporoStation.lon}`;
+      const dest = `${points.susukino.lat},${points.susukino.lon}`;
+      const waypoints = `${points.odori.lat},${points.odori.lon}|${points.tanukikoji.lat},${points.tanukikoji.lon}`;
+      const url = `https://www.google.com/maps/dir/?api=1&origin=${origin}&destination=${dest}&travelmode=walking&waypoints=${encodeURIComponent(waypoints)}`;
+      window.open(url, '_blank');
+    });
+
+    // 在小螢幕上提升觸控體驗：點擊 polyline 可顯示摘要
+    route.on('click', function(){ 
+      L.popup()
+        .setLatLng(route.getBounds().getCenter())
+        .setContent('<strong>地下街/地面步行路線</strong><br>札幌站 → 大通 → 狸小路 → 薄野')
+        .openOn(map);
+    });
+
+    // optional: 當使用者點到「JR Inn」popup，可自動放大
+    // 取得 jrInn marker（可以在需要時解開）
+    // const jrMarker = addMarker(points.jrInn, hotelIcon);
+    // jrMarker.on('click', () => map.setView([points.jrInn.lat, points.jrInn.lon], 17));
+
+  })();
+</script>
 </body>
 </html>
