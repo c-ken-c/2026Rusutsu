@@ -328,7 +328,7 @@
         /* 札幌地下街段落樣式 */
         #sapporo-underground {
             margin-top: 30px;
-            scroll-margin-top: 20px; /* 讓按鈕跳轉時留一點空間 */
+            scroll-margin-top: 20px;
         }
         .map-note {
             font-size: 0.9rem;
@@ -343,6 +343,8 @@
             border-radius: 30px;
             font-weight: 600;
             cursor: pointer;
+            text-decoration: none;
+            display: inline-block;
         }
     </style>
 </head>
@@ -423,7 +425,8 @@
         </div>
         <div id="sapporoMap" style="width:100%;height:56vh;border-radius:20px;overflow:hidden;border:1px solid #d0e2ef;"></div>
         <div style="margin-top:12px;">
-            <button id="openGmapsAll" class="gmaps-btn">📍 在 Google Maps 開啟整體路線</button>
+            <!-- 將原本的按鈕改為超連結，href 會在下方動態填入 -->
+            <a id="openGmapsAll" class="gmaps-btn" target="_blank" rel="noopener noreferrer">📍 在 Google Maps 開啟整體路線</a>
             <span style="margin-left:10px;color:#5f7e94;">（步行路線，新分頁開啟）</span>
         </div>
     </section>
@@ -677,13 +680,14 @@
             const route = L.polyline(routeCoords, { color: '#1d8bd1', weight: 5, opacity: 0.85, lineJoin: 'round' }).addTo(map);
             map.fitBounds(route.getBounds().pad(0.3));
 
-            document.getElementById('openGmapsAll').addEventListener('click', function(){
-                const origin = `${points.sapporoStation.lat},${points.sapporoStation.lon}`;
-                const dest = `${points.susukino.lat},${points.susukino.lon}`;
-                const waypoints = `${points.odori.lat},${points.odori.lon}|${points.tanukikoji.lat},${points.tanukikoji.lon}`;
-                const url = `https://www.google.com/maps/dir/?api=1&origin=${origin}&destination=${dest}&travelmode=walking&waypoints=${encodeURIComponent(waypoints)}`;
-                window.open(url, '_blank');
-            });
+            // 動態設定 Google Maps 超連結
+            const gmapsLink = document.getElementById('openGmapsAll');
+            const origin = `${points.sapporoStation.lat},${points.sapporoStation.lon}`;
+            const dest = `${points.susukino.lat},${points.susukino.lon}`;
+            const waypoints = `${points.odori.lat},${points.odori.lon}|${points.tanukikoji.lat},${points.tanukikoji.lon}`;
+            // 使用 encodeURIComponent 處理 waypoints 中的豎線
+            const url = `https://www.google.com/maps/dir/?api=1&origin=${origin}&destination=${dest}&travelmode=walking&waypoints=${encodeURIComponent(waypoints)}`;
+            gmapsLink.href = url;
 
             route.on('click', function(){ 
                 L.popup()
